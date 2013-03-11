@@ -1,21 +1,18 @@
 mysql = class {
 	ctor (host, username, passwd, dbname, port, socket, flags) {
-		if (!handle) return;
+		var h = mysql_init();
+		if (!h) return;
 		
 		if (host !== null || username !== null || passwd !== null || dbname !== null || port !== null || socket !== null || flags !== null) {
 			host := "localhost";
 			username := "root";
 			port := 3306;
 			flags := 0;
-			this.handle = mysql_real_connect(handle, host, username, passwd, dbname, port, socket, flags);
-			if (!this.handle) return;
+			this.handle = mysql_real_connect(h, host, username, passwd, dbname, port, socket, flags);
+			if (!this.handle) return null, mysql_error(h);
 		}
 		
-		..table.add_gc( this,
-			function () {
-				this.close();
-			}
-		); 
+		..table.add_gc(this, "close");
 	} 
 	
 	autocommit = function (b) {
@@ -82,16 +79,16 @@ mysql = class {
 	}
 	
 	get_errno = function () {
-		if (this[["handle"]]) {
-			return mysql_errno(this.handle);
+		if (h) {
+			return mysql_errno(h);
 		} else {
 			return 0;
 		}
 	}
 	
 	get_error = function () {
-		if (this[["handle"]]) {
-			return mysql_error(this.handle);
+		if (h) {
+			return mysql_error(h);
 		} else {
 			return "";
 		}
@@ -169,12 +166,16 @@ mysql = class {
 		}
 	}
 	
-	options = function (option = 0, value = 0) {
-		if (this[["handle"]]) {
-			return !!mysql_options(this.handle, option, value);
-		} else {
-			return 0;
-		}
+	options = function (name, value) {
+		return mysql_options(h, name, value);
+	}
+	
+	options_char = function (name, value) {
+		return mysql_options_char(h, name, value);
+	}
+	
+	options_int = function (name, value) {
+		return mysql_options_int(h, name, value);
 	}
 	
 	ping = function () {
@@ -204,7 +205,9 @@ mysql = class {
 	real_connect = function (host = "localhost", username = "root", passwd, dbname, port = 3306, socket, flags = 0) {
 		this.close();
 		if (handle) {
-			this.handle = mysql_real_connect(handle, host, username, passwd, dbname, port, socket, flags);
+			h = mysql_init();
+			if (!h) return false, this.get_error();
+			this.handle = mysql_real_connect(h, host, username, passwd, dbname, port, socket, flags);
 			if (this.handle)
 				return true;
 		}
@@ -212,8 +215,8 @@ mysql = class {
 	}
 	
 	escape_string = function (escapestr = "") {
-		if (this[["handle"]]) {
-			var re, str = mysql_real_escape_string(this.handle, 1024, escapestr, #escapestr);
+		if (h) {
+			var re, str = mysql_real_escape_string(h, 1024, escapestr, #escapestr);
 			return ..string.str(str);
 		}
 	}
@@ -485,9 +488,11 @@ namespace mysql {
 
 namespace mysql {
 	handle = mysql_init();
+	if ( ! handle) error("加载 mysql 库失败!");
 	
 	_gc = ..gcdata(  
-		_gc = function(){
+		_gc = function () {
+			mysql_close(handle);
 			mysql_server_end();
 		}
 	);
@@ -495,26 +500,6 @@ namespace mysql {
 	escape_string = function (escapestr = "") {
 		var re, str = mysql_real_escape_string(handle, 1024, escapestr, #escapestr);
 		return ..string.str(str);
-	}
-	
-	get_errno = function () {
-		return mysql_errno(handle);
-	}
-	
-	get_error = function () {
-		return mysql_error(handle);
-	}
-	
-	options = function (name, value) {
-		return mysql_options(handle, name, value);
-	}
-	
-	options_char = function (name, value) {
-		return mysql_options_char(handle, name, value);
-	}
-	
-	options_int = function (name, value) {
-		return mysql_options_int(handle, name, value);
 	}
 }
 
@@ -692,6 +677,8 @@ mysql() = MySQL类
 !mysql_l.more_results() = 检查是否还有查询结果（一般用在 multi_query 上）
 !mysql_l.next_result() = 为下一次 multi_query 做准备
 !mysql_l.options(.(选项,值) = 改变 MySQL 的选项
+!mysql_l.options_char(.(选项,值) = 改变 MySQL 的选项
+!mysql_l.options_int(.(选项,值) = 改变 MySQL 的选项
 !mysql_l.ping() = ping 一下与服务器的连接，或者当连接失效的时候重新连接
 !mysql_l.query(__) = 执行 SQL 语句，如果是查询语句，则返回结果集
 !mysql_l.real_connect(.(主机,用户名,密码,数据库名称,端口) = 连接到 MySQL 服务器
@@ -744,11 +731,6 @@ end intellisense*/
 
 /**intellisense(mysql)
 escape_string(__) = 转义字符串
-get_errno() = 获取错误号，0表示无错误
-get_error() = 获取错误信息，"" 表示无错误
-options(.(选项,值) = 改变 MySQL 的选项
-options_char(.(选项,值) = 改变 MySQL 的选项
-options_int(.(选项,值) = 改变 MySQL 的选项
 end intellisense**/
 
 /**intellisense()
