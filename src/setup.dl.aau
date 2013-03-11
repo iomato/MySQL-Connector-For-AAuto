@@ -1,4 +1,4 @@
- import fsys;
+import fsys;
  
 fsys.copy("/mysql", "~/mysql");
 
