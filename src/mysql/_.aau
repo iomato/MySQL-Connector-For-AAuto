@@ -490,7 +490,7 @@ namespace mysql {
 	handle = mysql_init();
 	if ( ! handle) error("º”‘ÿ mysql ø‚ ß∞‹!");
 	
-	_gc = ..gcdata(  
+	_gc = ..gcdata(
 		_gc = function () {
 			mysql_close(handle);
 			mysql_server_end();
@@ -583,6 +583,7 @@ namespace mysql {
 			if (this[["handle"]]) {
 				var fields = this.fetch_fields();
 				var row = this.fetch_row();
+				if ( ! row) return;
 				var ret = {};
 				for (i = 1; #fields) {
 					var field = fields[i];
