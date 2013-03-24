@@ -1,6 +1,6 @@
 import fsys;
  
-fsys.copy("/mysql", "~/lib/mysql");
+fsys.copy("/mysql", "~/lib/");
 
 import ide;
 ide.refreshStdLib();
