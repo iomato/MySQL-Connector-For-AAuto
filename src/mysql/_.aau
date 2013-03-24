@@ -1,3 +1,7 @@
+/*
+MariaDB Client Library for C:
+https://kb.askmonty.org/en/mariadb-client-library-for-c/
+*/
 mysql = class {
 	ctor (host, username, passwd, dbname, port, socket, flags) {
 		var h = mysql_init();
